@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "material-science-expert"
+version = "0.1.0"
+description = "LLM wrapper for llama3.2:1b with context information from Material Science project"
+authors = ["saj3sh"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+streamlit = "^1.40.1"
+langchain-ollama = "^0.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
