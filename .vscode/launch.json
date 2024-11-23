@@ -1,20 +1,17 @@
 {
-    "version": "0.2.0",
-    "configurations": [    
-        {
-            "name": "Poetry Streamlit Debug",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "streamlit",
-            "args": [
-                "run",
-                "chatbot.py"
-            ],
-            "justMyCode": true,
-            "env": {
-                "POETRY_VIRTUAL_ENV": "${workspaceFolder}/.venv"
-            },
-            "console": "integratedTerminal"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Poetry Streamlit Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "chatbot.py"],
+      "justMyCode": true,
+      "env": {
+        "POETRY_VIRTUAL_ENV": "${workspaceFolder}/.venv"
+      },
+      "console": "integratedTerminal"
+    }
+  ]
 }
