@@ -1,13 +1,24 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import traceback
+from dotenv import load_dotenv
+import langchain_core
+import langchain_core.runnables
+import langchain_core.runnables.base
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from qdrant_client import QdrantClient
 import streamlit as st
-from langchain.vectorstores import Qdrant
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_qdrant import QdrantVectorStore
 from langchain import hub
-from custom_embeddings import MatSciEmbeddings
+from utils.custom_embeddings import MatSciEmbeddings
+import debugpy
+from langchain_core.globals import set_verbose
+set_verbose(True)
+load_dotenv()
 
 # Sidebar for user inputs and links
 with st.sidebar:
@@ -28,17 +39,19 @@ st.caption("🚀 A Streamlit chatbot powered by a self-hosted LLM")
 qdrant_client = QdrantClient(host="localhost", port=6333)
 embeddings = MatSciEmbeddings()
 
-vectorstore = Qdrant.from_existing_collection(
+vectorstore = QdrantVectorStore(
     embedding=embeddings,
     collection_name="materials",
     client=qdrant_client
 )
 
 retriever = vectorstore.as_retriever()
-prompt = hub.pull("rlm/rag-prompt")
+rag_prompt = hub.pull("rlm/rag-prompt")
 
 
 def format_docs(docs):
+    if not docs:
+        return "No docs present"
     return "\n\n".join(doc.page_content for doc in docs)
 
 
@@ -49,6 +62,33 @@ if "messages" not in st.session_state:
 # Display existing messages
 for (role, content) in st.session_state["messages"]:
     st.chat_message(role).write(content)
+
+
+# Sample dataframe
+data = {
+    'Name': ['Alice', 'Bob', 'Charlie'],
+    'Age': [25, 30, 35],
+    'City': ['New York', 'Los Angeles', 'Chicago']
+}
+df = pd.DataFrame(data)
+
+# Display the table
+st.dataframe(df)
+
+
+# Create some data
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+# Create a plot
+plt.figure(figsize=(10, 6))
+plt.plot(x, y)
+plt.title("Sine Wave")
+plt.xlabel("X-axis")
+plt.ylabel("Y-axis")
+
+# Display the plot in Streamlit
+st.pyplot(plt)
 
 # Input prompt handling
 if prompt := st.chat_input():
@@ -71,7 +111,7 @@ if prompt := st.chat_input():
         )
         rag_chain = (
             {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt
+            | rag_prompt
             | llm
             | StrOutputParser()
         )
@@ -81,4 +121,6 @@ if prompt := st.chat_input():
         st.session_state["messages"].append(("assistant", response))
         st.chat_message("assistant").write(response)
     except Exception as e:
+        stack_trace = traceback.format_exc()
         st.error(f"Error communicating with the LLM: {e}")
+        st.markdown(f"Stack Trace:```{stack_trace}```")

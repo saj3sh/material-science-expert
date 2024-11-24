@@ -1,14 +1,17 @@
+import time
 import uuid
+from dotenv import load_dotenv
 from mp_api.client import MPRester
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
-from doc_formatter import format_summary_doc
+from utils.doc_formatter import format_summary_doc
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
-from normalize_text import normalize
+from utils.normalize_text import normalize
 from torch.utils.data import DataLoader
-from custom_embeddings import MatSciEmbeddings
-import torch
+from utils.custom_embeddings import MatSciEmbeddings
+
+load_dotenv()
 
 if (input('WARNING: This operation will overwrite all existing embeddings. '
           'This means all previously stored vector embeddings and their '
@@ -39,8 +42,9 @@ with MPRester("M4aseyAs7ose2uflpjD5iERCLf8eDjsS") as mpr:
     fields_to_include = set(
         mpr.materials.summary.available_fields) - {"builder_meta", "last_updated", "origins"}
     material_docs = mpr.materials.summary.search(
-        all_fields=False, fields=[*fields_to_include])
+        all_fields=False, fields=[*fields_to_include], chunk_size=1000, num_chunks=8)
 print("completed downloading documents from the Material Project API")
+start_time = time.perf_counter()
 material_descriptions = [format_summary_doc(doc) for doc in material_docs]
 material_descriptions = [
     (material_id, normalize(material_description))
@@ -56,21 +60,28 @@ chunked_documents = [
 ]
 material_ids, description_chunks = zip(*chunked_documents)
 
-vector_embeddings = MatSciEmbeddings().embed_documents(description_chunks)
-
-points = [
-    PointStruct(
-        id=str(uuid.uuid4()),
-        vector=vector_embedding,
-        payload={
-            "material_id": material_id,
-            "description": description_chunk
-        }
-    ) for vector_embedding, material_id, description_chunk in zip(vector_embeddings, material_ids, description_chunks)
-]
-# Add document to Qdrant
-qdrant_client.upsert(
-    collection_name=MATERIALS_COLLECTION_NAME,
-    points=points
-)
+embeddings_generator = MatSciEmbeddings(
+).stream_embeddings_in_batch(description_chunks)
+for batch_start_idx, batch_end_idx, batch_embeddings in embeddings_generator:
+    batch_material_ids = material_ids[batch_start_idx:batch_end_idx]
+    batch_description_chunks = description_chunks[batch_start_idx:batch_end_idx]
+    points = [
+        PointStruct(
+            id=str(uuid.uuid4()),
+            vector=embedding,
+            payload={
+                "material_id": material_id,
+                "description": description_chunk
+            }
+        ) for embedding, material_id, description_chunk in zip(batch_embeddings, batch_material_ids, batch_description_chunks)
+    ]
+    # Add document to Qdrant
+    qdrant_client.upsert(
+        collection_name=MATERIALS_COLLECTION_NAME,
+        points=points
+    )
+    print(f"{len(points)} points inserted to Qdrant.")
+end_time = time.perf_counter()
+time_taken = end_time - start_time
+print(f"Processing took {time_taken:.4f} seconds")
 print(123)

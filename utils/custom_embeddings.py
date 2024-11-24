@@ -1,4 +1,4 @@
-from typing import List
+from typing import Generator, List, Tuple
 from langchain_core.embeddings import Embeddings
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, AutoModel
@@ -20,8 +20,8 @@ class ChunkDataset(Dataset):
 
 class MatSciEmbeddings(Embeddings):
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("m3rg-iitd/matscibert")
-        self.model = AutoModel.from_pretrained("m3rg-iitd/matscibert")
+        self._tokenizer = AutoTokenizer.from_pretrained("m3rg-iitd/matscibert")
+        self._model = AutoModel.from_pretrained("m3rg-iitd/matscibert")
 
     @staticmethod
     def __process_batch(batch_of_texts, model, tokenizer):
@@ -39,15 +39,28 @@ class MatSciEmbeddings(Embeddings):
             embeddings = model(**inputs)[0].mean(dim=1)
         return embeddings.cpu().tolist()
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def stream_embeddings_in_batch(self, texts: List[str], batch_size=1600) -> Generator[Tuple[int, int, List[float]], None, None]:
+        assert batch_size % BATCH_SIZE == 0, f"batch_size should be a multiple of {BATCH_SIZE}"
         dataset = ChunkDataset(texts)
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
-        vector_embeddings = []
+        acc_embeddings = []
+        start_idx = 0
         for batch in dataloader:
-            batch_embeddings = MatSciEmbeddings.__process_batch(
-                [*batch], self._model, self._tokenizer)
-            vector_embeddings.extend(batch_embeddings)
-        return vector_embeddings
+            embeddings = MatSciEmbeddings.__process_batch(
+                [*batch], self._model, self._tokenizer
+            )
+            acc_embeddings.extend(embeddings)
+            while len(acc_embeddings) >= batch_size:
+                end_idx = start_idx + batch_size   # exclusive
+                yield start_idx, end_idx, acc_embeddings[:batch_size]
+                print(f'generated {batch_size} embeddings')
+                acc_embeddings = acc_embeddings[batch_size:]
+                start_idx = end_idx
+        if acc_embeddings:
+            yield start_idx, start_idx + len(acc_embeddings), acc_embeddings
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [embedding for batch in self.stream_embeddings_in_batch(texts) for embedding in batch[2]]
 
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
