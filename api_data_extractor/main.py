@@ -38,7 +38,7 @@ with MPRester(config.MATERIAL_PROJECT_TOKEN) as mpr:
     fields_to_include = set(
         mpr.materials.summary.available_fields) - {"builder_meta", "last_updated", "origins"}
     material_docs = mpr.materials.summary.search(
-        all_fields=False, fields=[*fields_to_include], chunk_size=48, num_chunks=1)
+        all_fields=False, fields=[*fields_to_include])
 print("completed downloading documents from the Material Project API")
 start_time = time.perf_counter()
 material_descriptions = [format_summary_doc(doc) for doc in material_docs]
