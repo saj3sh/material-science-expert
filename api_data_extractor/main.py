@@ -34,7 +34,7 @@ qdrant_client.create_collection(
 )
 # document model not used because of bug in API
 # https://github.com/materialsproject/api/issues/922
-with MPRester("M4aseyAs7ose2uflpjD5iERCLf8eDjsS") as mpr:
+with MPRester(config.MATERIAL_PROJECT_TOKEN) as mpr:
     fields_to_include = set(
         mpr.materials.summary.available_fields) - {"builder_meta", "last_updated", "origins"}
     material_docs = mpr.materials.summary.search(
