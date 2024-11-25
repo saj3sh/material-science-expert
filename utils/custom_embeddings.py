@@ -42,7 +42,7 @@ class MatSciEmbeddings(Embeddings):
             embeddings = model(**inputs)[0].mean(dim=1)
         return embeddings.cpu().tolist()
 
-    def stream_embeddings_in_batch(self, texts: List[str], batch_size=3200) -> Generator[Tuple[int, int, List[float]], None, None]:
+    def stream_embeddings_in_batch(self, texts: List[str], batch_size=1600) -> Generator[Tuple[int, int, List[float]], None, None]:
         assert batch_size % BATCH_SIZE == 0, f"batch_size should be a multiple of {BATCH_SIZE}"
         dataset = ChunkDataset(texts)
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
