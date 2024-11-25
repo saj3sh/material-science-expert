@@ -17,8 +17,8 @@ from langchain import hub
 from utils.custom_embeddings import MatSciEmbeddings
 import debugpy
 from langchain_core.globals import set_verbose
+import config
 set_verbose(True)
-load_dotenv()
 
 # Sidebar for user inputs and links
 with st.sidebar:
@@ -36,7 +36,8 @@ with st.sidebar:
 st.title("💬 MatSciBot")
 st.caption("🚀 A Streamlit chatbot powered by a self-hosted LLM")
 
-qdrant_client = QdrantClient(host="localhost", port=6333)
+qdrant_client = QdrantClient(
+    host=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
 embeddings = MatSciEmbeddings()
 
 vectorstore = QdrantVectorStore(

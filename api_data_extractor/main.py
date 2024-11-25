@@ -11,8 +11,7 @@ from langchain.schema import Document
 from utils.normalize_text import normalize
 from torch.utils.data import DataLoader
 from utils.custom_embeddings import MatSciEmbeddings
-
-load_dotenv()
+import config
 
 if (input('WARNING: This operation will overwrite all existing embeddings. '
           'This means all previously stored vector embeddings and their '
@@ -21,17 +20,14 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
     print("Operation aborted. No changes have been made.")
     exit(0)
 
-# Initialize Qdrant client
-# Update with your Qdrant instance details
-qdrant_client = QdrantClient(host="localhost", port=6333)
+qdrant_client = QdrantClient(
+    host=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
 
 MATERIALS_COLLECTION_NAME = "materials"
 
-# Drop the collection if it already exists
 if qdrant_client.collection_exists(collection_name=MATERIALS_COLLECTION_NAME):
     qdrant_client.delete_collection(collection_name=MATERIALS_COLLECTION_NAME)
 
-# Create or update a collection in Qdrant
 qdrant_client.create_collection(
     collection_name=MATERIALS_COLLECTION_NAME,
     vectors_config=VectorParams(size=768, distance=Distance.COSINE),
