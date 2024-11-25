@@ -8,33 +8,36 @@ import langchain_core.runnables
 import langchain_core.runnables.base
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from qdrant_client import QdrantClient
 import streamlit as st
 from langchain_qdrant import QdrantVectorStore
 from langchain import hub
+from chatbot_components.sidebar import configure_llm
 from utils.custom_embeddings import MatSciEmbeddings
 import debugpy
 from langchain_core.globals import set_verbose
 import config
+from prompts.utility_prompts import prompt_rephrase_user_query, prompt_required_data_points
 set_verbose(True)
 
-# Sidebar for user inputs and links
-with st.sidebar:
-    st.markdown("### LLM Settings")
-    remote_ollama_url = st.text_input(
-        "Remote Ollama URL", value="https://llm.bicbioeng.org")
-    st.markdown(
-        "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)")
-    st.markdown(
-        "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)]"
-        "(https://codespaces.new/streamlit/llm-examples?quickstart=1)"
-    )
+# Initialize session state variables
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [("assistant", "How can I help you?")]
+if 'remote_ollama_url_enabled' not in st.session_state:
+    st.session_state.remote_ollama_url_enabled = True
 
-# App title and initial setup
-st.title("💬 MatSciBot")
-st.caption("🚀 A Streamlit chatbot powered by a self-hosted LLM")
+get_llma_model, get_llma_model_json = configure_llm(st)
+
+st.title("MatRAG")
+st.caption("📚 A knowledge-based system built using Material Project data")
+
+
+chain_get_required_data_points = prompt_required_data_points | get_llma_model_json(
+    temperature=0) | JsonOutputParser()
+chain_rephrase_user_query = prompt_rephrase_user_query | get_llma_model(
+    temperature=0) | StrOutputParser()
 
 qdrant_client = QdrantClient(
     url=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
@@ -55,10 +58,6 @@ def format_docs(docs):
         return "No docs present"
     return "\n\n".join(doc.page_content for doc in docs)
 
-
-# Initialize session state for messages
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [("assistant", "How can I help you?")]
 
 # Display existing messages
 for (role, content) in st.session_state["messages"]:
@@ -90,36 +89,14 @@ for (role, content) in st.session_state["messages"]:
 
 # # Display the plot in Streamlit
 # st.pyplot(plt)
+one_model = get_llma_model(temperature=0) | StrOutputParser()
+if user_prompt := st.chat_input():
+    st.session_state["messages"].append(("user", user_prompt))
+    st.chat_message("user").write(user_prompt)
+    # template = ChatPromptTemplate.from_messages(st.session_state["messages"])
 
-# Input prompt handling
-if prompt := st.chat_input():
-    if not remote_ollama_url:
-        st.error("Please provide a valid remote Ollama URL.")
-        st.stop()
-
-    # Append user message
-    st.session_state["messages"].append(("user", prompt))
-    st.chat_message("user").write(prompt)
-    template = ChatPromptTemplate.from_messages(st.session_state["messages"])
-
-    # Initialize LLM and get response
     try:
-        output_parser = StrOutputParser()
-        llm = ChatOllama(
-            model="llama3.2:1b",
-            base_url=remote_ollama_url,
-            temperature=0
-        )
-        # docs = retriever.get_relevant_documents(prompt)
-        rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | rag_prompt
-            | llm
-            | StrOutputParser()
-        )
-        response = rag_chain.invoke({"input": prompt})
-        # print(response)
-        # Extract the assistant's reply
+        response = chain_rephrase_user_query.invoke({"query": user_prompt})
         st.session_state["messages"].append(("assistant", response))
         st.chat_message("assistant").write(response)
     except Exception as e:
