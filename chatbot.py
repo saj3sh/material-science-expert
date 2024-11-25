@@ -37,7 +37,7 @@ st.title("💬 MatSciBot")
 st.caption("🚀 A Streamlit chatbot powered by a self-hosted LLM")
 
 qdrant_client = QdrantClient(
-    host=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
+    url=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
 embeddings = MatSciEmbeddings()
 
 vectorstore = QdrantVectorStore(

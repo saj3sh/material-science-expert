@@ -21,7 +21,7 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
     exit(0)
 
 qdrant_client = QdrantClient(
-    host=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
+    url=config.QDRANT_URL, api_key=config.QDRANT_TOKEN, port=6333)
 
 MATERIALS_COLLECTION_NAME = "materials"
 
