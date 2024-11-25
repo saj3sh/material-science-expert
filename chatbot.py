@@ -64,31 +64,31 @@ for (role, content) in st.session_state["messages"]:
     st.chat_message(role).write(content)
 
 
-# Sample dataframe
-data = {
-    'Name': ['Alice', 'Bob', 'Charlie'],
-    'Age': [25, 30, 35],
-    'City': ['New York', 'Los Angeles', 'Chicago']
-}
-df = pd.DataFrame(data)
+# # Sample dataframe
+# data = {
+#     'Name': ['Alice', 'Bob', 'Charlie'],
+#     'Age': [25, 30, 35],
+#     'City': ['New York', 'Los Angeles', 'Chicago']
+# }
+# df = pd.DataFrame(data)
 
-# Display the table
-st.dataframe(df)
+# # Display the table
+# st.dataframe(df)
 
 
-# Create some data
-x = np.linspace(0, 10, 100)
-y = np.sin(x)
+# # Create some data
+# x = np.linspace(0, 10, 100)
+# y = np.sin(x)
 
-# Create a plot
-plt.figure(figsize=(10, 6))
-plt.plot(x, y)
-plt.title("Sine Wave")
-plt.xlabel("X-axis")
-plt.ylabel("Y-axis")
+# # Create a plot
+# plt.figure(figsize=(10, 6))
+# plt.plot(x, y)
+# plt.title("Sine Wave")
+# plt.xlabel("X-axis")
+# plt.ylabel("Y-axis")
 
-# Display the plot in Streamlit
-st.pyplot(plt)
+# # Display the plot in Streamlit
+# st.pyplot(plt)
 
 # Input prompt handling
 if prompt := st.chat_input():
@@ -109,6 +109,7 @@ if prompt := st.chat_input():
             base_url=remote_ollama_url,
             temperature=0
         )
+        # docs = retriever.get_relevant_documents(prompt)
         rag_chain = (
             {"context": retriever | format_docs, "question": RunnablePassthrough()}
             | rag_prompt

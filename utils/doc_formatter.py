@@ -4,14 +4,10 @@ from emmet.core.summary import SummaryDoc, Structure
 def _format_structure(structure: Structure):
     lattice_params = structure.lattice.abc  # a, b, c
     lattice_angles = structure.lattice.angles  # alpha, beta, gamma
-    num_sites = len(structure)
     species_summary = ", ".join(set(str(site.species)
                                 for site in structure))
-    # Can be modified if specific types are distinguishable
-    structure_type = "3D Periodic Structure"
 
     return (
-        f"{structure_type} with {num_sites} sites, "
         f"lattice parameters: a = {lattice_params[0]:.2f} Å, b = {lattice_params[1]:.2f} Å, and c = {lattice_params[2]:.2f} Å, "
         f"lattice angles: α={lattice_angles[0]: .2f}°, β={lattice_angles[1]: .2f}°, γ={lattice_angles[2]: .2f}°, "
         f"Species present: {species_summary}, "
@@ -44,11 +40,11 @@ def format_summary_doc(doc: SummaryDoc):
     # Material ID and structure
     description.append(f"Material ID: {doc.material_id}")
     # theoritical?
-    if doc.theoretical:
-        description.append(f"The material is theoretical")
+    description.append(
+        f"The material is{' not ' if not doc.theoretical else ''} theoretical")
     if doc.structure:
         description.append(
-            f"Structure: {_format_structure(doc.structure)}")
+            f"Lowest energy structure: {_format_structure(doc.structure)}")
     # Energy properties
     energy_data = []
     if doc.uncorrected_energy_per_atom is not None:
@@ -127,6 +123,7 @@ def format_summary_doc(doc: SummaryDoc):
             f"Possible charged species: {', '.join(doc.possible_species)}")
     if doc.decomposes_to:
         description.append(_format_decomposes_to(doc.decomposes_to))
+
     # if self.database_IDs:
     #     description.append(f"Database IDs: {', '.join(self.database_IDs)}")
 

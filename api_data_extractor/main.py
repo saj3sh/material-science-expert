@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 import uuid
 from dotenv import load_dotenv
@@ -35,14 +36,13 @@ qdrant_client.create_collection(
     collection_name=MATERIALS_COLLECTION_NAME,
     vectors_config=VectorParams(size=768, distance=Distance.COSINE),
 )
-
 # document model not used because of bug in API
 # https://github.com/materialsproject/api/issues/922
 with MPRester("M4aseyAs7ose2uflpjD5iERCLf8eDjsS") as mpr:
     fields_to_include = set(
         mpr.materials.summary.available_fields) - {"builder_meta", "last_updated", "origins"}
     material_docs = mpr.materials.summary.search(
-        all_fields=False, fields=[*fields_to_include], chunk_size=1000, num_chunks=8)
+        all_fields=False, fields=[*fields_to_include], chunk_size=48, num_chunks=1)
 print("completed downloading documents from the Material Project API")
 start_time = time.perf_counter()
 material_descriptions = [format_summary_doc(doc) for doc in material_docs]
@@ -61,7 +61,7 @@ chunked_documents = [
 material_ids, description_chunks = zip(*chunked_documents)
 
 embeddings_generator = MatSciEmbeddings(
-).stream_embeddings_in_batch(description_chunks)
+).stream_embeddings_in_batch(description_chunks, batch_size=16)
 for batch_start_idx, batch_end_idx, batch_embeddings in embeddings_generator:
     batch_material_ids = material_ids[batch_start_idx:batch_end_idx]
     batch_description_chunks = description_chunks[batch_start_idx:batch_end_idx]
@@ -71,7 +71,7 @@ for batch_start_idx, batch_end_idx, batch_embeddings in embeddings_generator:
             vector=embedding,
             payload={
                 "material_id": material_id,
-                "description": description_chunk
+                "page_content": description_chunk
             }
         ) for embedding, material_id, description_chunk in zip(batch_embeddings, batch_material_ids, batch_description_chunks)
     ]
@@ -80,7 +80,7 @@ for batch_start_idx, batch_end_idx, batch_embeddings in embeddings_generator:
         collection_name=MATERIALS_COLLECTION_NAME,
         points=points
     )
-    print(f"{len(points)} points inserted to Qdrant.")
+    print(f"{datetime.now()}: {len(points)} points inserted to Qdrant.")
 end_time = time.perf_counter()
 time_taken = end_time - start_time
 print(f"Processing took {time_taken:.4f} seconds")
