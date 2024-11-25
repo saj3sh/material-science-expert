@@ -57,7 +57,7 @@ chunked_documents = [
 material_ids, description_chunks = zip(*chunked_documents)
 
 embeddings_generator = MatSciEmbeddings(
-).stream_embeddings_in_batch(description_chunks, batch_size=16)
+).stream_embeddings_in_batch(description_chunks)
 for batch_start_idx, batch_end_idx, batch_embeddings in embeddings_generator:
     batch_material_ids = material_ids[batch_start_idx:batch_end_idx]
     batch_description_chunks = description_chunks[batch_start_idx:batch_end_idx]
