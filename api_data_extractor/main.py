@@ -10,7 +10,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from torch.utils.data import DataLoader
 from utils.embeddings import CustomEmbeddings
-import utils.embedding_models
+from utils.embedding_models import get_matscibert
 import config
 
 if (input('WARNING: This operation will overwrite all existing embeddings. '
@@ -20,7 +20,7 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
     print("Operation aborted. No changes have been made.")
     exit(0)
 
-embedding_model = CustomEmbeddings(*utils.embedding_models.get_matscibert())
+embedding_model = CustomEmbeddings(*get_matscibert())
 
 qdrant_client = QdrantClient(
     host="localhost", port=6333)

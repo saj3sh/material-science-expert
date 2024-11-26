@@ -1,79 +1,63 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import traceback
-from dotenv import load_dotenv
-import langchain_core
 import langchain_core.runnables
 import langchain_core.runnables.base
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain_core.runnables import RunnablePassthrough
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from qdrant_client import QdrantClient
 import streamlit as st
-from langchain_qdrant import QdrantVectorStore
-from langchain import hub
 from streamlit_components.page_styles import format_page_styles
 from streamlit_components.sidebar import configure_llm
-from custom_callbacks.rag_retrieval_handler import RagRetrievalHandler
-from custom_callbacks.stream_handler import StreamHandler
-from utils.embeddings import CustomEmbeddings
-import debugpy
+from utils.callback_handlers import StreamHandler
 from langchain_core.globals import set_verbose
-import utils.embedding_models
 from utils.prompts import *
+from langgraph.graph import END, StateGraph
+
+from utils.state_graph import GraphState, MatSciStateGraph
 set_verbose(True)
 format_page_styles(st)
 if 'remote_ollama_url_enabled' not in st.session_state:
     st.session_state.remote_ollama_url_enabled = True
 
-get_llma_model, get_llma_model_json = configure_llm(st)
+get_ollma_model, get_ollma_model_json = configure_llm(st)
 
 st.title("MatSci Expert")
 st.caption(
     "A knowledge-based system built using data from [Material Project](https://next-gen.materialsproject.org/)")
 
-
-chain_get_required_data_points = prompt_required_data_points | get_llma_model_json(
-    temperature=0) | JsonOutputParser()
-chain_rephrase_user_query = prompt_rephrase_user_query | get_llma_model_json(
-    temperature=.3) | JsonOutputParser()
-
-qdrant_client = QdrantClient(
-    host="localhost", port=6333)
-
-# nomic_embed_text_v1 performed poorly
-# embedding_model = CustomEmbeddings(*utils.embedding_models.get_nomic_embed_text_v1())
-
-embedding_model = CustomEmbeddings(
-    utils.embedding_models.get_matscibert())
-
-vectorstore = QdrantVectorStore(
-    embedding=embedding_model,
-    collection_name="materials",
-    client=qdrant_client
+# region defining system workflow
+sysGraph = MatSciStateGraph(get_ollma_model, get_ollma_model_json)
+workflow = StateGraph(GraphState)
+workflow.add_node("summarize", sysGraph.summarize)
+workflow.add_node(
+    "generate_related_attributes",
+    sysGraph.generate_related_attributes
+)
+workflow.add_node("generate_search_query", sysGraph.generate_search_query)
+workflow.add_node("generate_results_limit", sysGraph.generate_results_limit)
+workflow.add_node("retrieve_context", sysGraph.retrieve_context)
+workflow.add_node(
+    "generate_final_response",
+    sysGraph.generate_final_response
 )
 
-retriever = vectorstore.as_retriever()
+
+workflow.set_conditional_entry_point(lambda x: "summarize")
+workflow.add_edge("summarize", "generate_related_attributes")
+# shortcircuit to generate_final_response if RAG lacks sufficient content - reduce false positives
+workflow.add_conditional_edges(
+    "generate_related_attributes",
+    sysGraph.has_sufficient_context, {
+        True: "generate_search_query",
+        False: "generate_final_response"
+    })
+workflow.add_edge("generate_search_query", "generate_results_limit")
+workflow.add_edge("generate_results_limit", "retrieve_context")
+workflow.add_edge("retrieve_context", "generate_final_response")
+workflow.add_edge("generate_final_response", END)
+
+compiled_workflow = workflow.compile()
+# endregion
+
 message_history = StreamlitChatMessageHistory()
-memory = ConversationBufferMemory(
-    memory_key="chat_history", chat_memory=message_history, return_messages=True)
-
-
-def log(text):
-    print(text)
-    return text
-
-
-history_aware_retriever = create_history_aware_retriever(
-    get_llma_model_json(
-        temperature=.1), retriever, prompt_summarize_conversation
-)
 
 if len(message_history.messages) == 0:
     message_history.clear()
@@ -86,11 +70,12 @@ for msg in message_history.messages:
     st.chat_message(avatars[msg.type]).write(msg.content)
 
 if user_query := st.chat_input(placeholder="Ask me questions related to material science"):
-    st.chat_message(
-        "user", avatar="➖").write(user_query)
+    message_history.add_message(HumanMessage(content=user_query))
+    st.chat_message("human", avatar="➖").write(user_query)
 
-    with st.chat_message("assistant", avatar="🧬"):
-        retrieval_handler = RagRetrievalHandler(st.container())
+    with st.chat_message("ai", avatar="🧬"):
+        sysGraph.add_streamlit_container(st.container())
         stream_handler = StreamHandler(st.empty())
-        response = history_aware_retriever.invoke({"query": user_query, "chat_history": message_history.messages}, callbacks=[
-            retrieval_handler])
+        response = compiled_workflow.invoke(
+            {"query": user_query, "chat_history": message_history.messages})
+        st.chat_message("ai").write(response)
