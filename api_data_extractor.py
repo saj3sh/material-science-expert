@@ -1,16 +1,14 @@
 from datetime import datetime
 import time
 import uuid
-from dotenv import load_dotenv
 from mp_api.client import MPRester
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 from utils.data_formatting import format_summary_doc
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
-from torch.utils.data import DataLoader
 from utils.embeddings import CustomEmbeddings
 from utils.embedding_models import get_matscibert
+from utils.qdrant_client import get_qdrant_client
 import config
 
 if (input('WARNING: This operation will overwrite all existing embeddings. '
@@ -22,8 +20,7 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
 
 embedding_model = CustomEmbeddings(*get_matscibert())
 
-qdrant_client = QdrantClient(
-    host="localhost", port=6333)
+qdrant_client = get_qdrant_client()
 
 MATERIALS_COLLECTION_NAME = "materials"
 
@@ -40,7 +37,7 @@ with MPRester(config.MATERIAL_PROJECT_TOKEN) as mpr:
     fields_to_include = set(
         mpr.materials.summary.available_fields) - {"builder_meta", "last_updated", "origins"}
     material_docs = mpr.materials.summary.search(
-        all_fields=False, fields=[*fields_to_include], chunk_size=10, num_chunks=1)
+        all_fields=False, fields=[*fields_to_include])
 print("completed downloading documents from the Material Project API")
 start_time = time.perf_counter()
 material_descriptions = [format_summary_doc(doc) for doc in material_docs]

@@ -10,12 +10,12 @@ from utils.embeddings import CustomEmbeddings
 from utils.prompts import *
 from utils.embedding_models import get_matscibert
 from langchain.prompts import PromptTemplate
+from utils.qdrant_client import get_qdrant_client
 
 MATERIAL_PROJECT_BASE_URL = "https://next-gen.materialsproject.org/materials"
 
 # region initializing for Qdrant retrieval
-qdrant_client = QdrantClient(
-    host="localhost", port=6333)
+qdrant_client = get_qdrant_client()
 embedding_model = CustomEmbeddings(*get_matscibert())
 vectorstore = QdrantVectorStore(
     embedding=embedding_model,

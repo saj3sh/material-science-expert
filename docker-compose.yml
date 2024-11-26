@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    environment:
+      - QDRANT__SERVICE__LISTEN_PORT=6333
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot
+    ports:
+      - "8501:8501"   #  port on the host machine:port inside docker
+    depends_on:
+      - qdrant
+    environment:
+      - STREAMLIT_ENV=production
+    command: ["poetry", "run", "streamlit", "run", "chatbot.py"]
+
+  api-data-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-data-extractor
+    depends_on:
+      - qdrant
+    command: ["poetry", "run", "python", "api_data_extractor.py"]   
+    #to allow for user input
+    stdin_open: true
+    tty: true  
+
+volumes:
+  qdrant_data:
+    driver: local
