@@ -1,12 +1,11 @@
-import langchain_core.runnables
-import langchain_core.runnables.base
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 import streamlit as st
 from streamlit_components.page_styles import format_page_styles
 from streamlit_components.sidebar import configure_llm
-from utils.callback_handlers import StreamHandler
+from utils.callback_handlers import RagRetrievalHandler, StreamHandler
 from langchain_core.globals import set_verbose
 from utils.prompts import *
 from langgraph.graph import END, StateGraph
@@ -74,8 +73,13 @@ if user_query := st.chat_input(placeholder="Ask me questions related to material
     st.chat_message("human", avatar="➖").write(user_query)
 
     with st.chat_message("ai", avatar="🧬"):
-        sysGraph.add_streamlit_container(st.container())
-        stream_handler = StreamHandler(st.empty())
+        sysGraph.add_streamlit_containers(
+            status_container=st.container(),
+            output_container=st.empty()
+        )
         response = compiled_workflow.invoke(
-            {"query": user_query, "chat_history": message_history.messages})
-        st.chat_message("ai").write(response)
+            {
+                "query": user_query,
+                "chat_history": message_history.messages
+            }
+        )

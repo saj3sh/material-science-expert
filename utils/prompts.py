@@ -1,5 +1,4 @@
 from langchain.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 
 MAX_LIMIT = 10
 
@@ -9,7 +8,7 @@ prompt_generate_related_attributes = PromptTemplate(
     <|start_header_id|>system<|end_header_id|> 
     You are a materials science expert with access to a database of materials. Each material has a set of predefined attributes, such as:
 
-    1. **Material ID** (e.g., mp-676923)
+    1. **Material ID**
     2. **Whether the material is theoretical** or not
     3. **Structural properties** (e.g., lattice parameters, angles, species present, charge)
     4. **Energy properties** (e.g., energy per atom, formation energy, energy above the hull)
@@ -21,8 +20,7 @@ prompt_generate_related_attributes = PromptTemplate(
     10. **Possible charged species** (e.g., ions)
     11. **Decomposition information** (e.g., decomposition to other materials, decomposition amounts)
 
-    When a human asks a query like "What is MP-542595?", interpret it as a request for general information about the material, including its structural properties, energy properties, stability, electronic propertie, or magnetic properties — not just the material ID or whether the material is theoretical.
-    Try to include as many attributes as possible in the response
+    Try to include as many attributes as possible in the response. **Always include Material ID**
 
     Based on the human's query, you will identify the relevant material properties that will help answer the question. The response should be a **JSON object** that includes:
 
