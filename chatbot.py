@@ -61,20 +61,24 @@ if len(message_history.messages) == 0:
     message_history.clear()
     message_history.add_message(AIMessage(content="How can I help you?"))
 
-avatars = {
-    "human": "➖", "ai": "🧬"}
+avatars = {"human": "➖", "ai": "🧬"}
+
 
 for msg in message_history.messages:
     st.chat_message(avatars[msg.type]).write(msg.content)
 
 if user_query := st.chat_input(placeholder="Ask me questions related to material science"):
     message_history.add_message(HumanMessage(content=user_query))
-    st.chat_message("human", avatar="➖").write(user_query)
+    st.chat_message(avatars["human"]).write(user_query)
 
-    with st.chat_message("ai", avatar="🧬"):
+    with st.chat_message(avatars["ai"]):
+        st.empty()
+        analysis_container = st.container().status(label="**Analyzing user query**")
+        ai_message_container = st.empty()
+
         sysGraph.add_streamlit_containers(
-            status_container=st.container(),
-            output_container=st.empty()
+            analysis_container=analysis_container,
+            output_container=ai_message_container
         )
         response = compiled_workflow.invoke(
             {
@@ -82,3 +86,4 @@ if user_query := st.chat_input(placeholder="Ask me questions related to material
                 "chat_history": message_history.messages
             }
         )
+    message_history.add_message(AIMessage(content=response["output"]))

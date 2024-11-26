@@ -53,8 +53,8 @@ class MatSciStateGraph:
         self.output_text = ""
         pass
 
-    def add_streamlit_containers(self, status_container, output_container):
-        self._status = status_container.status("**Analyzing user query**")
+    def add_streamlit_containers(self, analysis_container, output_container):
+        self._status = analysis_container
         self._output_container = output_container
 
     def summarize(self, state):

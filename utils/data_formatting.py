@@ -1,3 +1,4 @@
+import re
 from emmet.core.summary import SummaryDoc, Structure
 import regex
 
@@ -137,5 +138,56 @@ def extract_material_ids(text) -> list[str]:
     # remove duplicates, preserve order of occurance, normalize to lowercase
     return [*dict.fromkeys(match.lower() for match in matches)]
 
+
+def parse_markdown_tables(markdown_text: str):
+    table_pattern = re.compile(
+        # matches lines starting and ending with '|', including newlines
+        r"(?:\|.*?\|\n)+",
+        re.DOTALL
+    )
+    # matches individual cells in table rows
+    cell_pattern = r"\| ([^|]+)"
+    tables = []
+    matches = table_pattern.findall(markdown_text)
+    for table_match in matches:
+        lines = [
+            line for line in table_match.split("\n")
+            if "|" in line and not set(line.strip()) == {"-", "|"}
+        ]
+        table = []
+        for line in lines:
+            cells = [cell.strip() for cell in re.findall(cell_pattern, line)]
+            if cells:
+                table.append(cells)
+        tables.append(table)
+
+    return tables
+
+
+# table = text = """
+# This is an example of text embedded with table.
+
+# Lets see if the regex can find table in this case?
+
+# Lets see!
+
+# | ID  | Name       | Age | Occupation         | City           | Country      | Email                 | Phone       | Company           | Salary    |
+# |-----|------------|-----|--------------------|----------------|--------------|-----------------------|-------------|-------------------|-----------|
+# | 1   | Alice      | 30  | Software Engineer  | New York       | USA          | alice@example.com     | 123-456-7890| TechCorp          | $120,000  |
+# | 2   | Bob        | 25  | Graphic Designer   | Los Angeles    | USA          | bob@example.com       | 987-654-3210| Creative Studio   | $80,000   |
+# | 3   | Charlie    | 35  | Teacher            | Chicago        | USA          | charlie@example.com   | 555-555-5555| Local School      | $70,000   |
+# | 4   | Diana      | 28  | Data Scientist     | San Francisco  | USA          | diana@example.com     | 444-444-4444| DataAnalytics Inc | $115,000  |
+# | 5   | Ethan      | 40  | Product Manager    | Seattle        | USA          | ethan@example.com     | 333-333-3333| InnovateTech      | $130,000  |
+# | 6   | Fiona      | 27  | UX Designer        | Austin         | USA          | fiona@example.com     | 222-222-2222| DesignLab         | $85,000   |
+# | 7   | George     | 50  | CEO                | Boston         | USA          | george@example.com    | 111-111-1111| GlobalCorp        | $250,000  |
+# | 8   | Hannah     | 22  | Intern             | Miami          | USA          | hannah@example.com    | 666-666-6666| StartupHub        | $40,000   |
+# | 9   | Ian        | 45  | Financial Analyst  | Denver         | USA          | ian@example.com       | 777-777-7777| FinanceGroup      | $100,000  |
+# | 10  | Julia      | 33  | HR Manager         | Atlanta        | USA          | julia@example.com     | 888-888-8888| HR Solutions      | $90,000   |
+
+# Let me know if this answers your query!
+# """
+# text = "| Apple Pie | Chocolate Cake | Vanilla Ice Cream | Strawberry Tart |"
+
+# abc = parse_markdown_tables(table)
 
 __all__ = ["format_summary_doc", "extract_material_ids"]
