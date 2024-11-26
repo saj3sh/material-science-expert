@@ -7,7 +7,6 @@ from qdrant_client import QdrantClient
 from typing_extensions import TypedDict
 from utils.data_formatting import extract_material_ids
 from utils.embeddings import CustomEmbeddings
-from utils.callback_handlers import RagRetrievalHandler
 from utils.prompts import *
 from utils.embedding_models import get_matscibert
 from langchain.prompts import PromptTemplate
