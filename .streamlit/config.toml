@@ -1,4 +1,5 @@
 [theme]
-base = "light"
+base="light"
+primaryColor="#0099ff"
 [ui]
-hideTopBar = true
+hideTopBar=true
