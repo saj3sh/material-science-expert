@@ -2,8 +2,14 @@ from typing import Generator, List, Tuple
 from langchain_core.embeddings import Embeddings
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, AutoModel
+import os
+import pathlib
+from tokenizers.normalizers import BertNormalizer
 from datetime import datetime
 import torch
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+model = AutoModel.from_pretrained(
+    'nomic-ai/nomic-embed-text-v1', trust_remote_code=True)
 
 BATCH_SIZE = 16
 
@@ -41,6 +47,24 @@ class MatSciEmbeddings(Embeddings):
         with torch.no_grad():
             embeddings = model(**inputs)[0].mean(dim=1)
         return embeddings.cpu().tolist()
+
+    @staticmethod
+    def normalize_text_with_bert(text: str) -> str:
+        f = open(os.path.join(pathlib.Path(
+            __file__).parent.resolve(), 'vocab_mappings.txt'), 'r')
+        mappings = f.read().strip().split('\n')
+        f.close()
+        mappings = {m[0]: m[2:] for m in mappings}
+        norm = BertNormalizer(lowercase=False, strip_accents=True,
+                              clean_text=True, handle_chinese_chars=True)
+        text = [norm.normalize_str(s) for s in text.split('\n')]
+        out = []
+        for s in text:
+            norm_s = ''
+            for c in s:
+                norm_s += mappings.get(c, ' ')
+            out.append(norm_s)
+        return '\n'.join(out)
 
     def stream_embeddings_in_batch(self, texts: List[str], batch_size=1600) -> Generator[Tuple[int, int, List[float]], None, None]:
         assert batch_size % BATCH_SIZE == 0, f"batch_size should be a multiple of {BATCH_SIZE}"

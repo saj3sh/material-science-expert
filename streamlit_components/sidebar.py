@@ -12,6 +12,7 @@ def configure_llm(st):
             "Remote Ollama URL", value="https://llm.bicbioeng.org",
             disabled=st.session_state.remote_ollama_url_enabled
         )
+        import streamlit as st
 
     def get_llma_model(temperature: Optional[float]):
         try:

@@ -136,5 +136,4 @@ cython_debug/
 # VSCode
 .vscode/
 
-# Streamlit
-.streamlit/
+qdrant_storage/

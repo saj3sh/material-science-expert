@@ -1,4 +1,5 @@
 from emmet.core.summary import SummaryDoc, Structure
+import regex
 
 
 def _format_structure(structure: Structure):
@@ -15,7 +16,7 @@ def _format_structure(structure: Structure):
     )
 
 
-def _format_decomposes_to(decomposes_to):
+def __format_decomposes_to(decomposes_to):
     if not decomposes_to:
         return ""
 
@@ -122,7 +123,7 @@ def format_summary_doc(doc: SummaryDoc):
         description.append(
             f"Possible charged species: {', '.join(doc.possible_species)}")
     if doc.decomposes_to:
-        description.append(_format_decomposes_to(doc.decomposes_to))
+        description.append(__format_decomposes_to(doc.decomposes_to))
 
     # if self.database_IDs:
     #     description.append(f"Database IDs: {', '.join(self.database_IDs)}")
@@ -130,4 +131,11 @@ def format_summary_doc(doc: SummaryDoc):
     return (doc.material_id, "; ".join(description).strip())
 
 
-__all__ = [format_summary_doc]
+def extract_material_ids(text) -> list[str]:
+    pattern = r"mp-\d+"
+    matches = regex.findall(pattern, text, regex.IGNORECASE)
+    # remove duplicates, preserve order of occurance, normalize to lowercase
+    return [*dict.fromkeys(match.lower() for match in matches)]
+
+
+__all__ = ["format_summary_doc", "extract_material_ids"]
