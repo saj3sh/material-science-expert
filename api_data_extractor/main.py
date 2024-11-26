@@ -9,7 +9,8 @@ from utils.data_formatting import format_summary_doc
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from torch.utils.data import DataLoader
-from utils.embeddings import MatSciEmbeddings
+from utils.embeddings import CustomEmbeddings
+import utils.embedding_models
 import config
 
 if (input('WARNING: This operation will overwrite all existing embeddings. '
@@ -19,7 +20,7 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
     print("Operation aborted. No changes have been made.")
     exit(0)
 
-embedding_model = MatSciEmbeddings()
+embedding_model = CustomEmbeddings(*utils.embedding_models.get_matscibert())
 
 qdrant_client = QdrantClient(
     host="localhost", port=6333)
@@ -44,7 +45,7 @@ print("completed downloading documents from the Material Project API")
 start_time = time.perf_counter()
 material_descriptions = [format_summary_doc(doc) for doc in material_docs]
 material_descriptions = [
-    (str(material_id), MatSciEmbeddings.normalize_text_with_bert(material_description))
+    (str(material_id), CustomEmbeddings.normalize_text_with_bert(material_description))
     for material_id, material_description in material_descriptions
 ]
 token_splitter = RecursiveCharacterTextSplitter(

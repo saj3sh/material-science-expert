@@ -22,10 +22,10 @@ from streamlit_components.page_styles import format_page_styles
 from streamlit_components.sidebar import configure_llm
 from custom_callbacks.rag_retrieval_handler import RagRetrievalHandler
 from custom_callbacks.stream_handler import StreamHandler
-from utils.embeddings import MatSciEmbeddings
+from utils.embeddings import CustomEmbeddings
 import debugpy
 from langchain_core.globals import set_verbose
-import config
+import utils.embedding_models
 from utils.prompts import *
 set_verbose(True)
 format_page_styles(st)
@@ -46,10 +46,15 @@ chain_rephrase_user_query = prompt_rephrase_user_query | get_llma_model_json(
 
 qdrant_client = QdrantClient(
     host="localhost", port=6333)
-embeddings = MatSciEmbeddings()
+
+# nomic_embed_text_v1 performed poorly
+# embedding_model = CustomEmbeddings(*utils.embedding_models.get_nomic_embed_text_v1())
+
+embedding_model = CustomEmbeddings(
+    utils.embedding_models.get_matscibert())
 
 vectorstore = QdrantVectorStore(
-    embedding=embeddings,
+    embedding=embedding_model,
     collection_name="materials",
     client=qdrant_client
 )

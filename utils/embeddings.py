@@ -7,9 +7,6 @@ import pathlib
 from tokenizers.normalizers import BertNormalizer
 from datetime import datetime
 import torch
-tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-model = AutoModel.from_pretrained(
-    'nomic-ai/nomic-embed-text-v1', trust_remote_code=True)
 
 BATCH_SIZE = 16
 
@@ -25,10 +22,10 @@ class ChunkDataset(Dataset):
         return self.chunks[idx]
 
 
-class MatSciEmbeddings(Embeddings):
-    def __init__(self):
-        self._tokenizer = AutoTokenizer.from_pretrained("m3rg-iitd/matscibert")
-        self._model = AutoModel.from_pretrained("m3rg-iitd/matscibert")
+class CustomEmbeddings(Embeddings):
+    def __init__(self, tokenizer, model):
+        self._tokenizer = tokenizer
+        self._model = model
 
     @staticmethod
     def __process_batch(batch_of_texts, model, tokenizer, print_device):
@@ -74,7 +71,7 @@ class MatSciEmbeddings(Embeddings):
         start_idx = 0
         print_device = True
         for batch in dataloader:
-            embeddings = MatSciEmbeddings.__process_batch(
+            embeddings = CustomEmbeddings.__process_batch(
                 [*batch], self._model, self._tokenizer, print_device
             )
             print_device = False
