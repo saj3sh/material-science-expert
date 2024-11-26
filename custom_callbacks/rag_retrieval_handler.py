@@ -1,6 +1,6 @@
 import os
 from langchain_core.callbacks import BaseCallbackHandler
-from utils.data_formatting_utils import extract_material_ids
+from utils.data_formatting import extract_material_ids
 
 MATERIAL_PROJECT_BASE_URL = "https://next-gen.materialsproject.org/materials"
 
