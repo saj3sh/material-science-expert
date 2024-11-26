@@ -18,6 +18,10 @@ if (input('WARNING: This operation will overwrite all existing embeddings. '
     print("Operation aborted. No changes have been made.")
     exit(0)
 
+if not config.USE_LOCAL_QDRANT:
+    print("Ensure the system is configured to use a local Qdrant store, as this process can lead to serious side effects.")
+    exit(0)
+
 embedding_model = CustomEmbeddings(*get_matscibert())
 
 qdrant_client = get_qdrant_client()
