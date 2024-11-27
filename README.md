@@ -69,6 +69,10 @@ The Chatbot will be available at [http://localhost:8501](http://localhost:8501/)
 poetry run python api_data_extractor.py
 ```
 
+### Demo Video
+https://github.com/user-attachments/assets/05088689-c905-43ef-b6d9-f9b570288cb5
+
+
 ### Project Structure
 
 ```plaintext
@@ -117,22 +121,12 @@ Currently, only the vector embeddings are stored in Qdrant, with MP-ID as the so
 
 ### Technologies Used
 
-#### 1. [MatSciBERT](https://github.com/M3RG-IITD/MatSciBERT)
+**1. [MatSciBERT](https://github.com/M3RG-IITD/MatSciBERT):** A BERT-based model trained on material science papers. Used here to generate tokens and embeddings for the RAG retrieval.
 
-- A BERT-based model trained on material science papers. Used here to generate tokens and embeddings for the RAG retrieval.
+**2. [Streamlit](https://streamlit.io/):** A Python framework for quickly building web apps. Used here to create the chat interface for interacting with the model.
 
-### 2. [Streamlit](https://streamlit.io/)
+**3. [Streamlit-AgGrid](https://github.com/PablocFonseca/streamlit-aggrid):** A Streamlit wrapper for the AG Grid JS library, enabling interactive tables with features like sorting, filtering, and Excel/CSV export. Custom logic is applied to extract pandas dataframes from markdown tables, which are then displayed using AgGrid.
 
-- A Python framework for quickly building web apps. Used here to create the chat interface for interacting with the model.
+**4. [Qdrant](https://qdrant.tech/):** A vector database for storing and searching embeddings. Used to efficiently search and retrieve material science data.
 
-### 3. [Streamlit-AgGrid](https://github.com/PablocFonseca/streamlit-aggrid)
-
-- A Streamlit wrapper for the AG Grid JS library, enabling interactive tables with features like sorting, filtering, and Excel/CSV export. Custom logic is applied to extract pandas dataframes from markdown tables, which are then displayed using AgGrid.
-
-### 4. [Qdrant](https://qdrant.tech/)
-
-- A vector database for storing and searching embeddings. Used to efficiently search and retrieve material science data.
-
-### 5. [LangChain](https://www.langchain.com/)
-
-- A framework for building applications with large language models. Used here to create the system graph and different LLM pipelines.
+**5. [LangChain](https://www.langchain.com/):** A framework for building applications with large language models. Used here to create the system graph and different LLM pipelines.
