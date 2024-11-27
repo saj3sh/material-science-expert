@@ -1,6 +1,8 @@
 import re
 from emmet.core.summary import SummaryDoc, Structure
-import regex
+from markdown import markdown
+import pandas as pd
+from bs4 import BeautifulSoup
 
 
 def _format_structure(structure: Structure):
@@ -134,12 +136,43 @@ def format_summary_doc(doc: SummaryDoc):
 
 def extract_material_ids(text) -> list[str]:
     pattern = r"mp-\d+"
-    matches = regex.findall(pattern, text, regex.IGNORECASE)
+    matches = re.findall(pattern, text, re.IGNORECASE)
     # remove duplicates, preserve order of occurance, normalize to lowercase
     return [*dict.fromkeys(match.lower() for match in matches)]
 
 
+REGEX_ADVANCED_TABLE_PLACEHOLDER_DIV = r'(<div id="div-advance-table-(\d+)"></div>)'
+
+
+def extract_markdown_tables(md: str) -> tuple[str, list[pd.DataFrame]]:
+    """
+    replace tables from markdown with placeholder divs. return changed HTML string, along with the list of tables
+
+    Input:
+    - md (str): markdown text that might have tables
+
+    Output:
+    - tuple: tuple with two parts:
+        - first part is the HTML string with tables replaced by placeholder divs
+        - second part is a list of DataFrames, each representing extracted markdown tables
+    """
+    html = markdown(md, extensions=['tables'])
+    try:
+        dataframes = pd.read_html(html)
+    except:
+        return '', []
+    soup = BeautifulSoup(html, 'html.parser')
+    tables = soup.findAll('table')
+
+    for idx, table in enumerate(tables):
+        placeholder_div = soup.new_tag('div', id=f'div-advance-table-{idx}')
+        table.replace_with(placeholder_div)
+
+    return str(soup), dataframes
+
+
 def parse_markdown_tables(markdown_text: str):
+    """parse tables from given markdown as list, currently not used"""
     table_pattern = re.compile(
         # matches lines starting and ending with '|', including newlines
         r"(?:\|.*?\|\n)+",
@@ -164,30 +197,5 @@ def parse_markdown_tables(markdown_text: str):
     return tables
 
 
-# table = text = """
-# This is an example of text embedded with table.
-
-# Lets see if the regex can find table in this case?
-
-# Lets see!
-
-# | ID  | Name       | Age | Occupation         | City           | Country      | Email                 | Phone       | Company           | Salary    |
-# |-----|------------|-----|--------------------|----------------|--------------|-----------------------|-------------|-------------------|-----------|
-# | 1   | Alice      | 30  | Software Engineer  | New York       | USA          | alice@example.com     | 123-456-7890| TechCorp          | $120,000  |
-# | 2   | Bob        | 25  | Graphic Designer   | Los Angeles    | USA          | bob@example.com       | 987-654-3210| Creative Studio   | $80,000   |
-# | 3   | Charlie    | 35  | Teacher            | Chicago        | USA          | charlie@example.com   | 555-555-5555| Local School      | $70,000   |
-# | 4   | Diana      | 28  | Data Scientist     | San Francisco  | USA          | diana@example.com     | 444-444-4444| DataAnalytics Inc | $115,000  |
-# | 5   | Ethan      | 40  | Product Manager    | Seattle        | USA          | ethan@example.com     | 333-333-3333| InnovateTech      | $130,000  |
-# | 6   | Fiona      | 27  | UX Designer        | Austin         | USA          | fiona@example.com     | 222-222-2222| DesignLab         | $85,000   |
-# | 7   | George     | 50  | CEO                | Boston         | USA          | george@example.com    | 111-111-1111| GlobalCorp        | $250,000  |
-# | 8   | Hannah     | 22  | Intern             | Miami          | USA          | hannah@example.com    | 666-666-6666| StartupHub        | $40,000   |
-# | 9   | Ian        | 45  | Financial Analyst  | Denver         | USA          | ian@example.com       | 777-777-7777| FinanceGroup      | $100,000  |
-# | 10  | Julia      | 33  | HR Manager         | Atlanta        | USA          | julia@example.com     | 888-888-8888| HR Solutions      | $90,000   |
-
-# Let me know if this answers your query!
-# """
-# text = "| Apple Pie | Chocolate Cake | Vanilla Ice Cream | Strawberry Tart |"
-
-# abc = parse_markdown_tables(table)
-
-__all__ = ["format_summary_doc", "extract_material_ids"]
+__all__ = ["format_summary_doc",
+           "extract_material_ids", "extract_markdown_tables"]

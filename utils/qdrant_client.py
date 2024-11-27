@@ -7,10 +7,12 @@ def get_qdrant_client():
     if config.USE_LOCAL_QDRANT:
         return QdrantClient(
             host="qdrant",
-            port=6333
+            port=6333,
+            timeout=15
         )
     return QdrantClient(
         url=config.QDRANT_URL,
         api_key=config.QDRANT_TOKEN,
-        port=6333
+        port=6333,
+        timeout=15
     )

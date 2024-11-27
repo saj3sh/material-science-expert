@@ -41,8 +41,8 @@ MATERIAL_PROJECT_TOKEN=<API key for fetching docs from Material Project>
    ```
 2. To build and run the API data extractor, use the following command:
    `bash
-    docker-compose run --build api-data-extractor
-    `
+docker-compose run --build api-data-extractor
+`
    **Warning:** The data extractor script has side effects. Specifically, it will first drop the entire collection from the Qdrant store before re-inserting the documents as they are retrieved from the MP API. This process is part of the setup for this project, so be aware that any existing data will be overwritten. The script also includes warning messages and will prompt for user confirmation before proceeding.
 
 #### Running Without Docker
@@ -109,8 +109,30 @@ Each of these node functions is defined as member methods of a custom class `sta
 
 ### Limitations
 
-After many trials and errors, I realized that the Ollama 3.2 1B is relatively small and better suited for basic tasks. Additionally, since we only had access to the online model and were working within a limited timeframe, domain-based fine-tuning wasn't feasible—something that could have significantly improved accuracy. That said, the system design for this task is modular, allowing us to easily switch to a larger model with more parameters such as OpenAI or Anthropic, which should enhance overall performance.
+After many trials and errors, I realized that the Ollama 3.2 1B is relatively small and better suited for basic tasks. Additionally, since we only had access to the online model and were working within a limited timeframe, domain-based fine-tuning wasn't feasible—something that could have significantly improved accuracy. That said, the system design for this task is modular, allowing us to easily switch to a larger model with more parameters, such as Ollama 3.1 8B/72B, paid models from OpenAI, etc., which should enhance overall performance. With the present Ollama 3.2 1B, performance might enhance with further prompt refactorings.
 
 ### Future Enhancements
 
 Currently, only the vector embeddings are stored in Qdrant, with MP-ID as the sole metadata. I believe we could improve accuracy by integrating an SQL query retrieval system alongside the vector database. This system would generate SQL queries based on user prompts and retrieve relevant data from relational databases when available. Such integration would be particularly useful for performing comparative analysis on different material properties.
+
+### Technologies Used
+
+#### 1. [MatSciBERT](https://github.com/M3RG-IITD/MatSciBERT)
+
+- A BERT-based model trained on material science papers. Used here to generate tokens and embeddings for the RAG retrieval.
+
+### 2. [Streamlit](https://streamlit.io/)
+
+- A Python framework for quickly building web apps. Used here to create the chat interface for interacting with the model.
+
+### 3. [Streamlit-AgGrid](https://github.com/PablocFonseca/streamlit-aggrid)
+
+- A Streamlit wrapper for the AG Grid JS library, enabling interactive tables with features like sorting, filtering, and Excel/CSV export. Custom logic is applied to extract pandas dataframes from markdown tables, which are then displayed using AgGrid.
+
+### 4. [Qdrant](https://qdrant.tech/)
+
+- A vector database for storing and searching embeddings. Used to efficiently search and retrieve material science data.
+
+### 5. [LangChain](https://www.langchain.com/)
+
+- A framework for building applications with large language models. Used here to create the system graph and different LLM pipelines.

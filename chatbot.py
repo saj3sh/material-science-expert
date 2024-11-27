@@ -1,9 +1,7 @@
-from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain.memory import ConversationBufferMemory
-from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 import streamlit as st
 from streamlit_components.page_styles import format_page_styles
+from streamlit_components.session_state import ChatMessageHistoryWithAdvancedTables, AiThoughtProcess
 from streamlit_components.sidebar import configure_llm
 from langchain_core.globals import set_verbose
 from utils.prompts import *
@@ -55,35 +53,39 @@ workflow.add_edge("generate_final_response", END)
 compiled_workflow = workflow.compile()
 # endregion
 
-message_history = StreamlitChatMessageHistory()
+avatars = {"human": "➖", "ai": "🧬"}
+message_history = ChatMessageHistoryWithAdvancedTables(avatars)
 
-if len(message_history.messages) == 0:
+if not message_history.messages:
     message_history.clear()
     message_history.add_message(AIMessage(content="How can I help you?"))
 
-avatars = {"human": "➖", "ai": "🧬"}
 
-
-for msg in message_history.messages:
-    st.chat_message(avatars[msg.type]).write(msg.content)
+for message in message_history.messages:
+    message.display_chat_message()
 
 if user_query := st.chat_input(placeholder="Ask me questions related to material science"):
     message_history.add_message(HumanMessage(content=user_query))
     st.chat_message(avatars["human"]).write(user_query)
 
     with st.chat_message(avatars["ai"]):
-        st.empty()
-        analysis_container = st.container().status(label="**Analyzing user query**")
-        ai_message_container = st.empty()
-
         sysGraph.add_streamlit_containers(
-            analysis_container=analysis_container,
-            output_container=ai_message_container
+            ai_thought_process_container := st.container().status(
+                label="**Analyzing user query**"
+            ),
+            output_container=st.empty()
         )
-        response = compiled_workflow.invoke(
-            {
-                "query": user_query,
-                "chat_history": message_history.messages
-            }
-        )
-    message_history.add_message(AIMessage(content=response["output"]))
+    response = compiled_workflow.invoke(
+        {
+            "query": user_query,
+            "chat_history": message_history.messages
+        }
+    )["output"]
+    ai_final_thought = sysGraph.extract_and_clear_ai_thought()
+    tables_exist = message_history.add_message(
+        AIMessage(content=response),
+        skip_advanced_tables=False,
+        ai_final_thought=ai_final_thought
+    )
+    if tables_exist:
+        st.rerun()   # re-render to display messages with advanced tables
