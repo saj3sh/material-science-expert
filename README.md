@@ -39,11 +39,11 @@ MATERIAL_PROJECT_TOKEN=<API key for fetching docs from Material Project>
    ```bash
    docker compose up --build chatbot
    ```
-2. To build and run API data extractor use following syntax.
+2. To build and run the API data extractor, use the following command:
    `bash
-    docker compose run --build api-data-extractor
+    docker-compose run --build api-data-extractor
     `
-   **Warning**: The data extractor script has side effects. For the purpose of this project, the setup is simple - During a new data fetch operation it drops entire collection from the Qdrant store first then re-inserts the documents as they are retrieved. The script also has warnings and requires user confirmation before proceeding
+   **Warning:** The data extractor script has side effects. Specifically, it will first drop the entire collection from the Qdrant store before re-inserting the documents as they are retrieved from the MP API. This process is part of the setup for this project, so be aware that any existing data will be overwritten. The script also includes warning messages and will prompt for user confirmation before proceeding.
 
 #### Running Without Docker
 
