@@ -99,7 +99,7 @@ poetry run python api_data_extractor.py
 
 1. `chatbot.py` - interface file for the chatbot based on Stream-lit python framework.
 2. `api_data_extractor.py` - python script file to fetch data from the MP API
-3. `utils/` - a module of custom utility methods and classes, including tools for data formatting, generating embeddings and tokens, system prompts, class for representing different nodes for system graph, and vocabulary mapping.
+3. `utils/` - a module of custom utility methods and classes, including tools for data formatting, generating embeddings and tokens using MatSciBERT, system prompts, class for representing different nodes for system graph, and vocabulary mapping.
 
 ### StateGraph design
 
@@ -109,7 +109,7 @@ Each of these node functions is defined as member methods of a custom class `sta
 
 ### Limitations
 
-After many trials and errors, I realized that the Ollama 3.2 1B is relatively small and better suited for basic tasks. Additionally, since we only had access to the online model and were working within a limited timeframe, domain-based fine-tuning wasn't feasible—something that could have significantly improved accuracy. That said, the system design for this task is modular, allowing us to easily switch to a larger model with more parameters such as OpenAI or Anthropic, which should effectively boost prediction accuracy.
+After many trials and errors, I realized that the Ollama 3.2 1B is relatively small and better suited for basic tasks. Additionally, since we only had access to the online model and were working within a limited timeframe, domain-based fine-tuning wasn't feasible—something that could have significantly improved accuracy. That said, the system design for this task is modular, allowing us to easily switch to a larger model with more parameters such as OpenAI or Anthropic, which should enhance overall performance.
 
 ### Future Enhancements
 
