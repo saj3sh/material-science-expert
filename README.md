@@ -104,6 +104,7 @@ poetry run python api_data_extractor.py
 ### StateGraph design
 
 ![alt text](https://github.com/saj3sh/material-science-expert/blob/main/state-graph-design.png?raw=true)
+
 Each of these node functions is defined as member methods of a custom class `state_graph.MatSciStateGraph`. The workflow setup is handled in the `chatbot.py` file, and all system prompts are located in `utils.prompts`.
 
 ### Limitations
